@@ -1,0 +1,65 @@
+<html lang="en">
+  <head>
+    <script>
+     require(["d3", "Viewer"], function(d3, Viewer){
+       var arr = <%= arr %>;
+
+       var parent = d3.select("#" + <%= uuid %>);
+       var svg = parent.select("svg");
+       Viewer.init_svg(svg);
+       Viewer.draw(svg, arr[0]);
+
+       var wait = function(duration){
+         var deferred = $.Deferred();
+         window.setTimeout(function(){deferred.resolve();}, duration);
+         return deferred.promise();
+       }
+       
+       var render = function(){
+         var val = 0;
+         parent.select(".range").each(function(){
+           val = parseInt(this.value) + 1;
+           this.value = val;
+         });
+         Viewer.draw(svg, arr[val]);
+       }
+
+       var loop = function(){
+         render();
+         $.when(wait(10), function(){
+           d = $.Deferred();
+           if(parent.select(".stop").style("visibility") == "hidden"){
+             d.reject();
+           }else{
+             d.resolve();
+           }
+           return d.promise();
+         }).then(loop);
+       }
+
+       parent.select(".play").on("click", function(){
+         loop();
+         d3.select(this).style("visibility", "hidden");
+         parent.select(".stop").style("visibility", "visible");
+       });
+
+       parent.select(".stop").on("click", function(){
+         d3.select(this).style("visibility", "hidden");
+         parent.select(".play").style("visibility", "visible");
+       });
+
+       parent.select(".range").on("change", render);
+     })
+    </script>
+  </head>
+  <body>
+    <div id=<%= uuid %>>
+      <svg></svg><br>
+      <form height="30" width="700">
+        <button class="play" type="button" style="visibility:visible;">&#x25ba</button>
+        <button class="stop" type="button" style="visibility:hidden;">&#9613&#9613</button>
+        <input type="range" class="range" min="0" max="<%=arr.length-1%>" step="1" value="0">
+      </form>
+    </div>
+  </body>
+</html>
